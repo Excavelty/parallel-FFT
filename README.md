@@ -1,1 +1,1 @@
-# parallel-FFT-Gaspi
+# parallel-FFT
