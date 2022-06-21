@@ -1,24 +1,29 @@
-SRC_DIR:=src
-INCLUDE_DIR:=include
+PROGRAM_NAME ?= upc_program
+PTHREADS ?= 4
+PPROCS ?= 1
+COMM_TYPE ?= mpi
 
-DATA_DIR := data
-DATA_SRC := $(DATA_DIR)/generated_data.csv
-DATA_OUT_FFT := $(DATA_DIR)/fft_data.csv
-DATA_OUT_IFFT := $(DATA_DIR)/rev_fft_data.csv
-
+NODE_FILE := nodes
+INCLUDE_DIR := ./include
+SRC := ./src
 SRCS := \
-	$(SRC_DIR)/main.c \
+	${SRC}/main.c \
 
-all: build run
+CONFIG_DIR := /opt/nfs/config
 
-data:
-	mkdir -p $(DATA_DIR)
-	$(PYTHON) $(SCRIPTS_DIR)/datagen.py &
 
-build:
-	upcc -Wc,"-fPIE" -network=mpi ${SRCS} -I ${INCLUDE_DIR} -o program_upc
-run: build data
-	UPC_NODEFILE=nodes upcrun -shared-heap 256M -c 4 -N 1 -n 4 ./program_upc ${DATA_SRC}
+all: compile run
+
+configure:
+	source ${CONFIG_DIR}/source_bupc_2021.4.sh
+	${CONFIG_DIR}/station206_name_list.sh 1 16 > ${NODE_FIME}
+
+compile:
+	upcc -bupc -network=${COMM_TYPE} -pthreads=${PTHREADS} ${SRCS} -o ${PROGRAM_NAME}
+
+run:
+	UPC_NODEFILE=${NODE_FILE} upcrun -shared-heap 256M -c ${PTHREADS} -N ${PPROCS} -n $$(( ${PTHREADS} * $(PPROCS) )) ./${PROGRAM_NAME}
 
 clean:
-	rm -f program_upc
+	rm ${PROGRAM_NAME}
+
